@@ -1,0 +1,389 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "description": "Bank Information Service allows you to access details of the Banks which are supported by the platform.",
+    "version": "1.0.0",
+    "title": "Bank Information Service"
+  },
+  "tags": [
+    {
+      "name": "Banks",
+      "description": "Banks"
+    }
+  ],
+  "paths": {
+    "/banks": {
+      "get": {
+        "tags": [
+          "Banks"
+        ],
+        "summary": "Get Banks",
+        "operationId": "findBank",
+        "description": "Retrieve a list of bank based on the country or bank name which are supported by the platform.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "searchText",
+            "description": "Specify the name of the bank to search based on the name. As examples, `Barclays`, `Danske Bank` and `HSBC`",
+            "schema": {
+              "type": "string",
+              "example": "Barclays",
+              "maxLength": 300
+            },
+            "x-constraints": "@WhitelistCharacters"
+          },
+          {
+            "in": "query",
+            "name": "bankCode",
+            "description": "The bank identification code, such as BIC (Bank identification code), SWIFT, BIN.",
+            "schema": {
+              "type": "string",
+              "example": "101Digital",
+              "maxLength": 100
+            },
+            "x-constraints": "@IDString"
+          },
+          {
+            "in": "query",
+            "name": "countryCode",
+            "description": "The country code, in ISO 3166-1 format.",
+            "schema": {
+              "type": "string",
+              "example": "SGP"
+            },
+            "x-constraints": "@io.marketplace.commons.validation.CountryCode"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "description": "Sort by given properties",
+            "schema": {
+              "type": "string",
+              "example": "bankName,-createdAt",
+              "maxLength": 300
+            },
+            "x-constraints": "@WhitelistCharacters"
+          },
+          {
+            "name": "pageNumber",
+            "in": "query",
+            "description": "The page number to return (starting at page 1).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 1,
+              "minimum": 1,
+              "maximum": 32768
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "The number of records to return in a single request.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "example": 10,
+              "minimum": 1,
+              "maximum": 10000
+            }
+          },
+          {
+            "name": "dataSource",
+            "in": "query",
+            "description": "Optional parameter to specify where the bank dataset is getting from",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "DB",
+              "maxLength": 50
+            },
+            "x-constraints": "@ValueOfEnum(enumClass = io.marketplace.services.bank.information.model.DataSource.class,allowEmpty=true)"
+          },
+          {
+            "name": "includeDomain",
+            "in": "query",
+            "description": "Optional parameter to specify whether to include the domain or not",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "example": true,
+              "default": true
+            }
+          },
+          {
+            "name": "includeBranches",
+            "in": "query",
+            "description": "Optional parameter to specify whether to include the branches or not",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "example": true,
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericBankListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "code": "063.S01.400.01",
+                      "message": "The sort columns contain invalid value."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "code": "063.S01.404.03",
+                      "message": "The Bank List was not found due to invalid data source."
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GenericBankListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Bank"
+            }
+          },
+          "paging": {
+            "$ref": "#/components/schemas/PagingInformation"
+          }
+        }
+      },
+      "Bank": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A unique identifier of the bank",
+            "example": "e26d331d-419e-4293-b863-00fb8c4cfb5f"
+          },
+          "bankId": {
+            "type": "string",
+            "description": "A unique identifier of the bank",
+            "example": 310
+          },
+          "countryCode": {
+            "type": "string",
+            "description": "The 3-character country code, in ISO 3166-1 Alpha-3 format.",
+            "example": "SGP"
+          },
+          "name": {
+            "type": "string",
+            "description": "The full name of the bank which the bank account belongs to..",
+            "example": "101D"
+          },
+          "bankLegalName": {
+            "type": "string",
+            "description": "The legally recognized name of a financial institution.",
+            "example": "101D"
+          },
+          "logo": {
+            "type": "string",
+            "description": "The URL of the bank logo.",
+            "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAAAW9yTlQBz6J3mgAAIqlJR....."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "The time of the bank account creation, in ISO date-time format in UTC timezone."
+          },
+          "paymentProviders": {
+            "$ref": "#/components/schemas/PaymentProviders"
+          },
+          "logoUrl": {
+            "type": "string",
+            "description": "Url of the bank logo"
+          },
+          "logoEncodedData": {
+            "type": "string",
+            "description": "Logo encoded data"
+          },
+          "bucketLogoPrefix": {
+            "type": "string",
+            "description": "Storage bucket logo prefix"
+          },
+          "branchCount": {
+            "type": "integer",
+            "description": "Number of the branches under the bank",
+            "example": 7
+          },
+          "bankCode": {
+            "type": "string",
+            "description": "The bank identification code, such as BIC (Bank identification code), SWIFT, BIN.",
+            "example": "101Digital",
+            "maxLength": 100
+          },
+          "branches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Branch"
+            }
+          },
+          "domains": {
+            "$ref": "#/components/schemas/Domains"
+          }
+        }
+      },
+      "PaymentProviders": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Provider"
+        }
+      },
+      "Provider": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Provider name.",
+            "example": "Instapay"
+          },
+          "code": {
+            "type": "string",
+            "description": "Provider code.",
+            "example": "ITP"
+          },
+          "description": {
+            "type": "string",
+            "description": "Provider description.",
+            "example": "Instapay provider"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "A flag indicating whether provider is the default one for routing payments. Note that even though the provider is selected but it will be subjected to fee preference algorithm.",
+            "example": true
+          },
+          "isSupported": {
+            "type": "boolean",
+            "description": "A flag indicating whether provider is the supported or not.",
+            "example": true
+          }
+        }
+      },
+      "Domains": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Domain"
+        }
+      },
+      "Domain": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Domain code.",
+            "example": "FIRNMZM"
+          },
+          "name": {
+            "type": "string",
+            "description": "Domain name.",
+            "example": "BankAMoney"
+          }
+        }
+      },
+      "Branch": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "branch code.",
+            "example": 678910
+          }
+        }
+      },
+      "PagingInformation": {
+        "type": "object",
+        "properties": {
+          "totalRecords": {
+            "type": "integer",
+            "format": "int64",
+            "example": 100
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int32",
+            "example": 10
+          },
+          "pageNumber": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "description": "API response when error occur",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorItem"
+            },
+            "example": [
+              {
+                "code": "062.06.500.01",
+                "message": "Invalid country code"
+              }
+            ]
+          }
+        }
+      },
+      "ErrorItem": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "application error code see also [all error code](https://github.com/101digital/example-payment-service-bc-app/wiki/Payment-Service-Error-Codes)",
+            "example": "062.06.500.01"
+          },
+          "message": {
+            "type": "string",
+            "description": "error detail message",
+            "example": "Invalid country code"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,463 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Contacts Service",
+    "version": "1.0.0",
+    "description": "The Contacts service is used in the context of a financial app used for transactions. Using the Contacts service, you can create, manage, and search for both Beneficiaries and Contacts. <br><br>In Contacts service, the term Beneficiaries refers to payees who are part of a countrywide network directory and can be found through the financial app. These individuals or businesses are recipients of funds during financial transactions. On the other hand, the term Contacts refers to local copies of beneficiaries saved by a customer within the financial app. These saved beneficiaries are the individuals or businesses that the customer frequently transacts with and wishes to have easy access to. This distinction ensures that customers can effectively use the service to handle both the broader network of beneficiaries and their own personal list of frequently transacted contacts."
+  },
+  "servers": [
+    {
+      "url": "https://api-neobank-dev.101digital.io"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Beneficiaries",
+      "description": "This service is designed to create, manage (updated and delete), and find beneficiaries (or payee) who are part of a payment network directory. This service also supports validating the QR code of a beneficiary to support a secure transaction."
+    }
+  ],
+  "paths": {
+    "/beneficiaries/{type}/{identification}": {
+      "get": {
+        "tags": [
+          "Beneficiaries"
+        ],
+        "summary": "Get a Beneficiary",
+        "description": "Get details of an existing beneficiary by `type` and `identification`.",
+        "operationId": "lookupBeneficiaryAccount",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "description": "The type of identification.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "example": "MobileNumber",
+            "x-constraints": "@WhitelistCharacters"
+          },
+          {
+            "name": "identification",
+            "in": "path",
+            "description": "The identification value corresponding to the `type`, such as the mobile number for the `type` of Mobile.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "example": "609100000147",
+            "x-constraints": "@WhitelistCharacters"
+          },
+          {
+            "name": "bankCode",
+            "in": "query",
+            "description": "The bank identification code, such as BIC (Bank identification code), SWIFT, BIN.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "IOIDSGSG",
+            "x-constraints": "@WhitelistCharacters @io.marketplace.commons.validation.BankCode"
+          },
+          {
+            "name": "bankDomainCode",
+            "in": "query",
+            "description": "The bank domain code of the bank.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "example": "Striker",
+            "x-constraints": "@IDString"
+          },
+          {
+            "name": "walletId",
+            "in": "query",
+            "required": false,
+            "description": "A unique UUID of the e-wallet.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "example": "f3b9595e-80fc-4333-9611-b0fe4a3ef222",
+            "x-constraints": "@WhitelistCharacters"
+          },
+          {
+            "name": "beneficiaryAccountType",
+            "in": "query",
+            "required": false,
+            "x-constraints": "@WhitelistCharacters",
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "enum": [
+                "SavingsAccount",
+                "CurrentAccount",
+                "LoanAccount",
+                "CreditCard",
+                "CASA"
+              ]
+            }
+          },
+          {
+            "name": "merchantKey",
+            "in": "query",
+            "required": false,
+            "description": "A unique UUID of the merchantKey.",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "example": "f3b9595e-80fc-4333-9611-b0fe4a3ef444",
+            "x-constraints": "@WhitelistCharacters"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupBeneficiaryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "code": "092.S01.400.10",
+                      "message": "The beneficiaryAccountType is invalid."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "code": "092.S01.404.01",
+                      "message": "The wallet was not found with %s."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "errors": [
+                    {
+                      "code": "092.S01.500.22",
+                      "message": "Unable to perform the task retrieve Id Number from User Profile KYC details."
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LookupBeneficiaryResponse": {
+        "type": "object",
+        "description": "The beneficiary info.",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Beneficiary"
+          }
+        }
+      },
+      "Beneficiary": {
+        "type": "object",
+        "description": "The beneficiary information along with QR code details.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A unique identifier of the beneficiary.",
+            "format": "UUID",
+            "example": "004a8b15-9e97-4d70-a8b1-e16e1efc721b",
+            "readOnly": true
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The display name of the beneficiary, which is customizable by the customer.",
+            "example": "Lim Imran Hafizuddin",
+            "maxLength": 100
+          },
+          "paymentReference": {
+            "type": "string",
+            "example": "0255940020",
+            "description": "The reference number for the payment made to the beneficiary, such as a utility account number for a utility payment or a mobile number for mobile service providers.",
+            "maxLength": 300
+          },
+          "accountNumber": {
+            "type": "string",
+            "example": "14041022011209",
+            "description": "A unique identifier of the beneficiary account.",
+            "maxLength": 300
+          },
+          "bankCode": {
+            "type": "string",
+            "example": "IOIDSGSG",
+            "description": "The bank identification code, such as BIC (Bank identification code), SWIFT, BIN.",
+            "maxLength": 100,
+            "x-constraints": "@WhitelistCharacters @io.marketplace.commons.validation.BankCode"
+          },
+          "bankDomainCode": {
+            "type": "string",
+            "example": "Striker",
+            "description": "The domain code of the bank.",
+            "maxLength": 100,
+            "x-constraints": "@IDString"
+          },
+          "bankDomainName": {
+            "type": "string",
+            "example": "Striker",
+            "description": "The domain name of the bank.",
+            "maxLength": 255,
+            "x-constraints": "@WhitelistCharacters"
+          },
+          "accountType": {
+            "type": "string",
+            "example": "Savings",
+            "description": "The type of account that the beneficiary, such as a Current Account, Savings Account or Credit Card.",
+            "maxLength": 100
+          },
+          "accountSubType": {
+            "type": "string",
+            "example": "DDA",
+            "description": "The sub-type of the beneficiary account, such as DDA, SMA, and TDA, which further specifies the primary account type.",
+            "maxLength": 100
+          },
+          "type": {
+            "type": "string",
+            "example": "MobileNumber",
+            "description": "The type of identification by which the payee or beneficiary can be found in the network. It can be MobileNumber, AccountNumber, Email, IDCard, AccountIdentifier, Passport etc.",
+            "maxLength": 100
+          },
+          "identification": {
+            "type": "string",
+            "example": "609100000147",
+            "description": "The identification value corresponding to the `type`. For example, if the `type` is Mobile, then this field must contain the actual mobile number of the beneficiary.",
+            "maxLength": 100
+          },
+          "recipientType": {
+            "type": "string",
+            "example": "Individual",
+            "description": "The type of recipients such as Individual or Business.",
+            "maxLength": 100
+          },
+          "secondaryType": {
+            "type": "string",
+            "example": "IDCard",
+            "description": "A secondary type of identification for beneficiary such as IDCard, AccountIdentifier, Passport.",
+            "maxLength": 100
+          },
+          "secondaryIdentification": {
+            "type": "string",
+            "example": "I11111111C",
+            "description": "The secondary identification value corresponding to the `secondaryType`. For example, if the `secondaryType` is IDCard, then this field must contain the actual ID card number of the beneficiary.",
+            "maxLength": 100
+          },
+          "purpose": {
+            "type": "string",
+            "example": "Food",
+            "description": "The purpose for which the payment will be made to the beneficiary.",
+            "maxLength": 100
+          },
+          "proxyBankCode": {
+            "type": "string",
+            "example": "IOIDSGSG",
+            "description": "The proxy bank identification code.",
+            "maxLength": 100
+          },
+          "proxyBankName": {
+            "type": "string",
+            "example": "101 Digital",
+            "description": "The proxy bank name.",
+            "maxLength": 255
+          },
+          "address": {
+            "type": "string",
+            "example": "400 Balestier Road 02-14 Balestier Plaza 329802",
+            "description": "The address of the beneficiary.",
+            "maxLength": 500
+          },
+          "businessName": {
+            "type": "string",
+            "example": "ABC Pte Ltd.",
+            "description": "The name of the business associated with the beneficiary.",
+            "maxLength": 300
+          },
+          "businessRegistrationNumber": {
+            "type": "string",
+            "example": "R12344",
+            "description": "The business registration number.",
+            "maxLength": 100
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": 6586754765,
+            "description": "The phone number of the beneficiary.",
+            "maxLength": 50
+          },
+          "firstName": {
+            "type": "string",
+            "example": "Salman",
+            "description": "The first name of the beneficiary.",
+            "maxLength": 300
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Khan",
+            "description": "The last name of the beneficiary.",
+            "maxLength": 300
+          },
+          "schemeName": {
+            "type": "string",
+            "example": "AccountNumber",
+            "description": "The scheme name."
+          },
+          "logo": {
+            "type": "string",
+            "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAAAW9yTlQBz6J3mgAAIqlJR.....",
+            "description": "The URL of the bank logo."
+          },
+          "recipientCode": {
+            "type": "string",
+            "example": 6024,
+            "description": "The code of the recipient or beneficiary.",
+            "maxLength": 100
+          },
+          "qrDetails": {
+            "type": "object",
+            "description": "The QR code details if this beneficiary was derived from a QR code.",
+            "additionalProperties": true,
+            "example": {
+              "qrcodeVersion": 0,
+              "qrcodeInitiationMethod": 11,
+              "merchantCategoryCode": "0000",
+              "transactionCurrency": "764",
+              "transferAmount": "30",
+              "tipOrConvenience": "01",
+              "fixedFee": "1",
+              "percentageFee": "2",
+              "countryCode": "TH",
+              "merchantName": "Test MerchantName",
+              "merchantCity": "Bangkok",
+              "billNumber": "98765431234",
+              "mobileNumber": "1234567890",
+              "storeId": "A9876",
+              "loyaltyNumber": "777",
+              "referenceNo": "TH.111111111111111",
+              "consumerAccountNumber": "0987654321",
+              "terminalNo": "T12345",
+              "purposeTransaction": "Test Purpose Message",
+              "additionalCustomerData": "***",
+              "merchantTaxId": "010553705100000",
+              "vat": "2.5"
+            }
+          },
+          "userId": {
+            "type": "string",
+            "format": "UUID",
+            "example": "e57de103-3ab9-439e-aa47-4c09bc82f1d1",
+            "description": "The unique UUID of the financial app user."
+          },
+          "walletId": {
+            "type": "string",
+            "format": "UUID",
+            "example": "f3b9595e-80fc-4333-9611-b0fe4a3ef222",
+            "description": "The unique UUID of the e-wallet."
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE",
+            "description": "The beneficiary's status, such as ACTIVE or INACTIVE."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-03-04T11:30:00.000Z",
+            "description": "Timestamp representing the date and time when the beneficiary was created."
+          },
+          "updateAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2023-03-04T11:30:00.000Z",
+            "description": "Timestamp representing the date and time when beneficiary details were last updated."
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponseStatus"
+            }
+          }
+        }
+      },
+      "ResponseStatus": {
+        "type": "object",
+        "description": "The response code and message.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "The error code.",
+            "example": "092.S01.500.01"
+          },
+          "message": {
+            "type": "string",
+            "description": "The error message corresponding to the `code`.",
+            "example": "Database connectivity or configuration issue when saving the request."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
